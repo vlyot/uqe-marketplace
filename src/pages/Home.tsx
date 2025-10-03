@@ -28,18 +28,21 @@ export interface AduriteItem {
   rap: number;
   price: number;            // USD
   projected?: boolean;
-  sgdMin?: number;          // from Frankfurter conversion logic in App.tsx
-  sgdMax?: number;
+  sgdEstimate: number;      // Primary SGD estimate
+  sgdMin?: number;          // Min SGD range
+  sgdMax?: number;          // Max SGD range
+  rateMin?: number;         // Min rate based on SGD
+  rateMax?: number;         // Max rate based on SGD
 }
 
-type SortKey = "rate" | "rap" | "value" | null;
+type SortKey = "rate" | "rap" | null;
 
 export interface HomeProps {
   items: AduriteItem[];
   rateThreshold: number;
   setRateThreshold: React.Dispatch<React.SetStateAction<number>>;
-  minRAP: number;
-  setMinRAP: React.Dispatch<React.SetStateAction<number>>;
+  minRAP: string;
+  setMinRAP: React.Dispatch<React.SetStateAction<string>>;
   maxRAP: number;
   setMaxRAP: React.Dispatch<React.SetStateAction<number>>;
   sortBy: SortKey;
@@ -51,6 +54,7 @@ export interface HomeProps {
   reloadFlag: number;
   setReloadFlag: React.Dispatch<React.SetStateAction<number>>;
   runtime: number;
+  rapOptions: { label: string; value: string }[];
 }
 
 function formatValue(n: number): string {
@@ -73,37 +77,46 @@ const Home: React.FC<HomeProps> = ({
   setSearchTerm,
   error,
   darkMode,
-  reloadFlag,
   setReloadFlag,
   runtime,
+  rapOptions,
 }) => {
   const [selectedItem, setSelectedItem] = useState<AduriteItem | null>(null);
 
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     const base = !q ? items : items.filter(i => i.limited_name.toLowerCase().includes(q));
+    
     const byFilter = base.filter((entry) => {
-      const rap = entry.rap || 1;
-      const rate = entry.price / (rap / 1000);
+      const minRate = entry.rateMin || 0;
+      const minRAPNum = parseInt(minRAP) || 0;
+      
+      // Simple filtering - RAP range, rate threshold, and USD price
       return (
-        entry.rap >= minRAP &&
+        entry.rap >= minRAPNum &&
         entry.rap <= maxRAP &&
-        rate <= rateThreshold &&
-        entry.price > 0
+        (minRate <= rateThreshold || minRate === 0) && // Allow items with 0 rate or within threshold
+        entry.price > 0 // Only require USD price > 0
       );
     });
+    
     return byFilter.sort((a, b) => {
-      if (sortBy === "rap") return a.rap - b.rap;
-      if (sortBy === "value") return a.rap - b.rap;
-      const rateA = a.price / ((a.rap || 1) / 1000);
-      const rateB = b.price / ((b.rap || 1) / 1000);
-      return rateA - rateB;
+      // Apply user-selected sorting
+      if (sortBy === "rap") {
+        return a.rap - b.rap;
+      }
+      if (sortBy === "rate") {
+        const rateA = (a.rateMin || 0);
+        const rateB = (b.rateMin || 0);
+        return rateA - rateB;
+      }
+      
+      return 0;
     });
   }, [items, minRAP, maxRAP, rateThreshold, sortBy, searchTerm]);
 
 
   // Long scrollable list, smaller cards
-  const CARD_HEIGHT = 220;
   // Dynamically fetch thumbnails for visible items
   const INITIAL_THUMBS = 20;
   const [thumbWindow, setThumbWindow] = useState({ start: 0, end: INITIAL_THUMBS });
@@ -168,16 +181,6 @@ const Home: React.FC<HomeProps> = ({
               >
                 RAP (Lowest First)
               </button>
-              <button
-                onClick={() => setSortBy("value")}
-                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
-                  sortBy === "value"
-                    ? (darkMode ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-800")
-                    : (darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100")
-                }`}
-              >
-                Value (Lowest First)
-              </button>
               {sortBy && (
                 <button
                   onClick={() => setSortBy(null)}
@@ -217,20 +220,24 @@ const Home: React.FC<HomeProps> = ({
             <div className="space-y-3">
               <div>
                 <label className="text-sm block mb-1">Minimum RAP</label>
-                <input
-                  type="number"
+                <select
                   value={minRAP}
-                  onChange={(e) => setMinRAP(parseInt(e.target.value))}
+                  onChange={(e) => setMinRAP(e.target.value)}
                   className={`w-full px-3 py-2 rounded-md border ${
                     darkMode 
-                      ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                      ? "bg-gray-700 border-gray-600 text-white" 
                       : "bg-white border-gray-300 text-gray-900"
                   } focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-                  min="0"
-                />
+                >
+                  {rapOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
-                <label className="text-sm block mb-1">Maximum RAP</label>
+                <label className="text-sm block mb-1">Maximum RAP/Value</label>
                 <input
                   type="number"
                   value={maxRAP}
@@ -240,7 +247,9 @@ const Home: React.FC<HomeProps> = ({
                       ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
                       : "bg-white border-gray-300 text-gray-900"
                   } focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-                  min="0"
+                  min="1000000"
+                  max="5000000"
+                  placeholder="1M - 5M"
                 />
               </div>
             </div>
@@ -314,7 +323,7 @@ const Home: React.FC<HomeProps> = ({
         <div className="p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {filtered.map((entry, i) => {
-              const rate = entry.price / ((entry.rap || 1) / 1000);
+              const displayValue = entry.rap;
               return (
                 <div
                   key={i}
@@ -349,24 +358,20 @@ const Home: React.FC<HomeProps> = ({
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-500">RAP:</span>
-                        <span className="font-medium">{formatValue(entry.rap)}</span>
+                        <span className="font-medium">{formatValue(displayValue)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Price:</span>
-                        <span className="font-medium">${entry.price.toLocaleString()}</span>
+                        <span className="text-gray-500">Est. Price:</span>
+                        <span className="font-medium">
+                          S${(entry.sgdMin || 0).toLocaleString()} - S${(entry.sgdMax || 0).toLocaleString()}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Rate:</span>
-                        <span className={`font-medium ${rate <= 2 ? "text-green-600" : rate <= 3 ? "text-yellow-600" : "text-red-600"}`}>
-                          {rate.toFixed(2)}
+                        <span className={`font-medium ${(entry.rateMin || 0) <= 2 ? "text-green-600" : (entry.rateMin || 0) <= 3 ? "text-yellow-600" : "text-red-600"}`}>
+                          {entry.rateMin?.toFixed(2)} - {entry.rateMax?.toFixed(2)}
                         </span>
                       </div>
-                      {entry.sgdMin && entry.sgdMax && (
-                        <div className="flex justify-between text-xs text-gray-400 pt-1">
-                          <span>SGD:</span>
-                          <span>S${entry.sgdMin.toLocaleString()} – S${entry.sgdMax.toLocaleString()}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -389,7 +394,7 @@ const Home: React.FC<HomeProps> = ({
       {/* Modal */}
       {selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className={`${darkMode ? "bg-gray-800" : "bg-white"} rounded-lg shadow-xl max-w-lg w-full max-h-screen overflow-y-auto`}>
+          <div className={`${darkMode ? "bg-gray-800" : "bg-white"} rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto`}>
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-lg font-semibold">{selectedItem.limited_name}</h2>
               <button
@@ -404,40 +409,81 @@ const Home: React.FC<HomeProps> = ({
               </button>
             </div>
             
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500">Limited ID:</span>
-                  <p className="font-medium">{selectedItem.limited_id}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500">RAP:</span>
-                  <p className="font-medium">{selectedItem.rap.toLocaleString()}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500">Value:</span>
-                  <p className="font-medium">{formatValue(selectedItem.rap)}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500">Cost:</span>
-                  <p className="font-medium">${selectedItem.price.toFixed(2)}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500">Rate:</span>
-                  <p className="font-medium">{(selectedItem.price / ((selectedItem.rap || 1) / 1000)).toFixed(2)}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500">Projected:</span>
-                  <p className="font-medium">{selectedItem.projected ? "Yes" : "No"}</p>
+            <div className="p-6">
+              {/* Item Image */}
+              <div className="mb-6 flex justify-center">
+                <img
+                  src={thumbs[selectedItem.limited_id] || "https://tr.rbxcdn.com/7c1b6e6e7e6e7e6e7e6e7e6e7e6e7e6e/180/180/Image/Png"}
+                  alt={selectedItem.limited_name}
+                  className="w-32 h-32 object-contain bg-gray-100 rounded-lg"
+                  onError={e => {
+                    (e.target as HTMLImageElement).src = "https://tr.rbxcdn.com/7c1b6e6e7e6e7e6e7e6e7e6e7e6e7e6e/180/180/Image/Png";
+                  }}
+                />
+              </div>
+
+              {/* Item Details */}
+              <div className="space-y-4 mb-6">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500">Limited ID:</span>
+                    <p className="font-medium">{selectedItem.limited_id}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">RAP:</span>
+                    <p className="font-medium">{formatValue(selectedItem.rap)}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Est. Price Range:</span>
+                    <p className="font-medium">S${(selectedItem.sgdMin || 0).toLocaleString()} - S${(selectedItem.sgdMax || 0).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Rate Range:</span>
+                    <p className="font-medium">
+                      {selectedItem.rateMin?.toFixed(2)} - {selectedItem.rateMax?.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Projected:</span>
+                    <p className="font-medium">{selectedItem.projected ? "Yes" : "No"}</p>
+                  </div>
                 </div>
               </div>
-              
-              {selectedItem.sgdMin && selectedItem.sgdMax && (
-                <div>
-                  <span className="text-gray-500 text-sm">Est. SGD Range:</span>
-                  <p className="font-medium">S${selectedItem.sgdMin.toLocaleString()} – S${selectedItem.sgdMax.toLocaleString()}</p>
+
+              {/* Pricing Disclaimer */}
+              <div className={`p-3 rounded-md mb-4 ${darkMode ? "bg-yellow-900 border-yellow-700" : "bg-yellow-50 border-yellow-200"} border`}>
+                <div className="flex">
+                  <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <h4 className={`text-sm font-medium ${darkMode ? "text-yellow-200" : "text-yellow-800"}`}>Price Estimate Disclaimer</h4>
+                    <p className={`text-sm mt-1 ${darkMode ? "text-yellow-300" : "text-yellow-700"}`}>
+                      The price range shown is a mere estimate. The real price and rate should be lower than the maximum prices stated. 
+                      The maximum prices are only shown as an extreme estimate, just in case.
+                    </p>
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* Discord CTA */}
+              <div className={`p-4 rounded-lg ${darkMode ? "bg-blue-800 border-blue-600" : "bg-blue-100 border-blue-300"} border`}>
+                <h3 className={`font-semibold mb-2 ${darkMode ? "text-blue-200" : "text-blue-700"}`}>Interested in this item?</h3>
+                <p className={`text-sm mb-3 ${darkMode ? "text-white" : "text-white"}`}>
+                  Join our Discord server to contact me for purchasing this item!
+                </p>
+                <a
+                  href="https://discord.gg/KfhjS73e7s"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.317 4.369a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37.07.07 0 0 0 3.598 4.4c-3.123 4.668-3.97 9.226-3.549 13.724a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+                  </svg>
+                  Join Discord Server
+                </a>
+              </div>
             </div>
             
             <div className="flex justify-end p-6 border-t border-gray-200">
