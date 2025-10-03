@@ -14,8 +14,9 @@ interface AduriteItem {
   rateMax?: number;         // Max rate based on SGD
 }
 
-// Use local proxy for Rolimons API
-const ROLIMONS_URL = "http://localhost:3001/rolimons/items/v1/itemdetails";
+// Use proxy base from environment
+const PROXY_BASE = import.meta.env.VITE_ADURITE_BASE || "";
+const ROLIMONS_URL = `${PROXY_BASE}/rolimons/items/v1/itemdetails`;
 const ADURITE_URL = "https://adurite.com/api/market/roblox";
 
 // Cache system

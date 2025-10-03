@@ -8,7 +8,8 @@ function useRobloxThumbnails(assetIds: number[]) {
     if (assetIds.length === 0) return;
     const idsToFetch = assetIds.filter(id => !(id in thumbs));
     if (idsToFetch.length === 0) return;
-  fetch(`http://localhost:3001/roblox/thumbnails?assetIds=${idsToFetch.join(",")}&size=420x420&format=Png`)
+  const proxyBase = import.meta.env.VITE_ADURITE_BASE || "";
+  fetch(`${proxyBase}/roblox/thumbnails?assetIds=${idsToFetch.join(",")}&size=420x420&format=Png`)
       .then(res => res.json())
       .then(json => {
         const next: { [id: number]: string } = {};

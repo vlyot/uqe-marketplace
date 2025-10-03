@@ -2,7 +2,8 @@
 import { getJSON } from './http';
 
 // Use local proxy for Rolimons API
-const ROLIMONS_URL = "http://localhost:3001/rolimons/items/v1/itemdetails";
+const PROXY_BASE = import.meta.env.VITE_ADURITE_BASE || "";
+const ROLIMONS_URL = `${PROXY_BASE}/rolimons/items/v1/itemdetails`;
 
 export async function fetchRolimonItemdetails(): Promise<Record<string, any>> {
   return getJSON<Record<string, any>>(ROLIMONS_URL);
