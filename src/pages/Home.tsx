@@ -136,146 +136,321 @@ const Home: React.FC<HomeProps> = ({
     return () => observer.disconnect();
   }, [filtered.length]);
 
-  const totalValue = filtered.reduce((sum, it) => sum + (it.price || 0), 0);
-  const totalRAP = filtered.reduce((sum, it) => sum + (it.rap || 0), 0);
 
   return (
     <>
-      {/* Controls */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <button className="btn btn-outline-light me-2" onClick={() => setSortBy("rap")}>
-            RAP
-          </button>
-          <button className="btn btn-outline-light me-2" onClick={() => setSortBy("value")}>
-            Value
-          </button>
-          <button className="btn btn-outline-light me-2" onClick={() => setSortBy("rate")}>
-            Rate
-          </button>
-          <button className="btn btn-outline-secondary" onClick={() => setSortBy(null)}>
-            Reset
-          </button>
-        </div>
-        <div className="d-flex align-items-center w-50 justify-content-end">
-          <input
-            className="form-control bg-dark text-light w-50 me-2"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <button
-            className="btn btn-outline-info me-2"
-            onClick={() => setReloadFlag((f) => f + 1)}
-            title="Reload data"
-          >
-            Reload
-          </button>
-          <span className="badge bg-secondary">
-            Runtime: {Math.floor(runtime / 60)}:{(runtime % 60).toString().padStart(2, "0")}
-          </span>
-        </div>
-      </div>
-
-      {/* RAP and Rate filters */}
-      <div className="d-flex align-items-center mb-3">
-        <label className="me-2">Rate ≤</label>
-        <input
-          type="number"
-          value={rateThreshold}
-          onChange={(e) => setRateThreshold(parseFloat(e.target.value))}
-          className="form-control bg-dark text-light me-3 w-25"
-          step="0.1"
-        />
-        <label className="me-2">RAP Range:</label>
-        <input
-          type="number"
-          value={minRAP}
-          onChange={(e) => setMinRAP(parseInt(e.target.value))}
-          className="form-control bg-dark text-light me-2 w-25"
-        />
-        <span className="me-2">to</span>
-        <input
-          type="number"
-          value={maxRAP}
-          onChange={(e) => setMaxRAP(parseInt(e.target.value))}
-          className="form-control bg-dark text-light w-25"
-        />
-      </div>
-
-      {/* Error display */}
-      {error && <div className="alert alert-danger">{error}</div>}
-
-
-
-      {/* Card Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '1rem',
-          marginTop: '2rem',
-        }}
-      >
-        {filtered.map((entry, i) => {
-          const rate = entry.price / ((entry.rap || 1) / 1000);
-          return (
-            <div
-              key={i}
-              ref={el => cardRefs.current[i] = el}
-              data-index={i}
-              className="card bg-dark text-light"
-              style={{ borderRadius: 10, boxShadow: '0 2px 8px #0004', cursor: 'pointer', padding: 10, position: 'relative', minHeight: 180 }}
-              onClick={() => setSelectedItem(entry)}
-            >
-              <img
-                src={thumbs[entry.limited_id] || "https://tr.rbxcdn.com/7c1b6e6e7e6e7e6e7e6e7e6e7e6e7e6e/180/180/Image/Png"}
-                alt={entry.limited_name}
-                style={{ width: '100%', height: 90, objectFit: 'contain', borderRadius: 6, background: '#222' }}
-                onError={e => {
-                  (e.target as HTMLImageElement).src = "https://tr.rbxcdn.com/7c1b6e6e7e6e7e6e7e6e7e6e7e6e7e6e/180/180/Image/Png";
-                }}
-              />
-              <div style={{ marginTop: 8, fontWeight: 700, fontSize: 15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entry.limited_name}</div>
-              <div style={{ color: '#ff4d4f', fontWeight: 600, fontSize: 13, marginTop: 2 }}>RAP {formatValue(entry.rap)}</div>
-              <div style={{ color: '#ff4d4f', fontWeight: 600, fontSize: 13 }}>Price ${entry.price.toLocaleString()}</div>
-              <div style={{ marginTop: 2, color: '#aaa', fontSize: 12 }}>Rate {rate.toFixed(2)}</div>
-              {entry.sgdMin && entry.sgdMax && (
-                <div style={{ color: '#aaa', fontSize: 11 }}>SGD S${entry.sgdMin.toLocaleString()} – S${entry.sgdMax.toLocaleString()}</div>
-              )}
-              {entry.projected && (
-                <span style={{ position: 'absolute', top: 8, right: 8, background: '#d9534f', color: '#fff', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>Projected</span>
+      {/* Filters Sidebar */}
+      <aside className={`w-64 h-screen ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border-r overflow-y-auto`}>
+        <div className="p-6">
+          <h2 className="text-lg font-semibold mb-6">Filters</h2>
+          
+          {/* Sort Section */}
+          <div className="mb-6">
+            <h3 className="text-sm font-medium mb-3 uppercase tracking-wide text-gray-500">Sort By</h3>
+            <div className="space-y-2">
+              <button
+                onClick={() => setSortBy("rate")}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  sortBy === "rate"
+                    ? (darkMode ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-800")
+                    : (darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100")
+                }`}
+              >
+                Rate (Best First)
+              </button>
+              <button
+                onClick={() => setSortBy("rap")}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  sortBy === "rap"
+                    ? (darkMode ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-800")
+                    : (darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100")
+                }`}
+              >
+                RAP (Lowest First)
+              </button>
+              <button
+                onClick={() => setSortBy("value")}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  sortBy === "value"
+                    ? (darkMode ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-800")
+                    : (darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100")
+                }`}
+              >
+                Value (Lowest First)
+              </button>
+              {sortBy && (
+                <button
+                  onClick={() => setSortBy(null)}
+                  className={`w-full text-left px-3 py-2 rounded-md transition-colors text-sm ${
+                    darkMode ? "text-gray-400 hover:bg-gray-700" : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  Reset Sort
+                </button>
               )}
             </div>
-          );
-        })}
-      </div>
+          </div>
+
+          {/* Rate Filter */}
+          <div className="mb-6">
+            <h3 className="text-sm font-medium mb-3 uppercase tracking-wide text-gray-500">Rate Threshold</h3>
+            <div className="space-y-2">
+              <label className="text-sm">Maximum Rate (≤ {rateThreshold})</label>
+              <input
+                type="number"
+                value={rateThreshold}
+                onChange={(e) => setRateThreshold(parseFloat(e.target.value))}
+                className={`w-full px-3 py-2 rounded-md border ${
+                  darkMode 
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                    : "bg-white border-gray-300 text-gray-900"
+                } focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                step="0.1"
+                min="0"
+              />
+            </div>
+          </div>
+
+          {/* RAP Range */}
+          <div className="mb-6">
+            <h3 className="text-sm font-medium mb-3 uppercase tracking-wide text-gray-500">RAP Range</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm block mb-1">Minimum RAP</label>
+                <input
+                  type="number"
+                  value={minRAP}
+                  onChange={(e) => setMinRAP(parseInt(e.target.value))}
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    darkMode 
+                      ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="text-sm block mb-1">Maximum RAP</label>
+                <input
+                  type="number"
+                  value={maxRAP}
+                  onChange={(e) => setMaxRAP(parseInt(e.target.value))}
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    darkMode 
+                      ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                  min="0"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Results Count */}
+          <div className={`p-3 rounded-md ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}>
+            <p className="text-sm">
+              <span className="font-medium">{filtered.length}</span> items found
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 min-h-screen">
+        {/* Search Header */}
+        <div className={`${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border-b px-6 py-4`}>
+          <div className="flex items-center justify-between">
+            <div className="flex-1 max-w-lg">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search items..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-2 rounded-md border ${
+                    darkMode 
+                      ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4 ml-6">
+              <button
+                onClick={() => setReloadFlag((f) => f + 1)}
+                className={`px-4 py-2 rounded-md transition-colors ${
+                  darkMode 
+                    ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
+                title="Reload data"
+              >
+                Reload
+              </button>
+              
+              <div className={`px-3 py-1 rounded-full text-sm ${
+                darkMode ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-600"
+              }`}>
+                Runtime: {Math.floor(runtime / 60)}:{(runtime % 60).toString().padStart(2, "0")}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mx-6 mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
+
+        {/* Products Grid */}
+        <div className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {filtered.map((entry, i) => {
+              const rate = entry.price / ((entry.rap || 1) / 1000);
+              return (
+                <div
+                  key={i}
+                  ref={el => { cardRefs.current[i] = el; }}
+                  data-index={i}
+                  className={`group ${darkMode ? "bg-gray-800 hover:bg-gray-750" : "bg-white hover:bg-gray-50"} rounded-lg shadow-sm border ${
+                    darkMode ? "border-gray-700" : "border-gray-200"
+                  } overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-md`}
+                  onClick={() => setSelectedItem(entry)}
+                >
+                  <div className="relative">
+                    <img
+                      src={thumbs[entry.limited_id] || "https://tr.rbxcdn.com/7c1b6e6e7e6e7e6e7e6e7e6e7e6e7e6e/180/180/Image/Png"}
+                      alt={entry.limited_name}
+                      className="w-full h-40 object-contain bg-gray-100"
+                      onError={e => {
+                        (e.target as HTMLImageElement).src = "https://tr.rbxcdn.com/7c1b6e6e7e6e7e6e7e6e7e6e7e6e7e6e/180/180/Image/Png";
+                      }}
+                    />
+                    {entry.projected && (
+                      <span className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                        Projected
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="p-4">
+                    <h3 className="font-medium text-sm mb-2 leading-tight overflow-hidden">
+                      <span className="block truncate">{entry.limited_name}</span>
+                    </h3>
+                    
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">RAP:</span>
+                        <span className="font-medium">{formatValue(entry.rap)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Price:</span>
+                        <span className="font-medium">${entry.price.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Rate:</span>
+                        <span className={`font-medium ${rate <= 2 ? "text-green-600" : rate <= 3 ? "text-yellow-600" : "text-red-600"}`}>
+                          {rate.toFixed(2)}
+                        </span>
+                      </div>
+                      {entry.sgdMin && entry.sgdMax && (
+                        <div className="flex justify-between text-xs text-gray-400 pt-1">
+                          <span>SGD:</span>
+                          <span>S${entry.sgdMin.toLocaleString()} – S${entry.sgdMax.toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {filtered.length === 0 && !error && (
+            <div className="text-center py-12">
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2m13-8V9a4 4 0 00-4-4H9a4 4 0 00-4 4v4h1.5" />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No items found</h3>
+              <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or search term.</p>
+            </div>
+          )}
+        </div>
+      </main>
 
       {/* Modal */}
       {selectedItem && (
-        <div className="modal show fade d-block" tabIndex={-1} style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className={`modal-content ${darkMode ? "bg-dark text-light" : ""}`}>
-              <div className="modal-header">
-                <h5 className="modal-title">{selectedItem.limited_name} Details</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => setSelectedItem(null)}></button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className={`${darkMode ? "bg-gray-800" : "bg-white"} rounded-lg shadow-xl max-w-lg w-full max-h-screen overflow-y-auto`}>
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold">{selectedItem.limited_name}</h2>
+              <button
+                onClick={() => setSelectedItem(null)}
+                className={`p-2 rounded-md transition-colors ${
+                  darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500">Limited ID:</span>
+                  <p className="font-medium">{selectedItem.limited_id}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">RAP:</span>
+                  <p className="font-medium">{selectedItem.rap.toLocaleString()}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Value:</span>
+                  <p className="font-medium">{formatValue(selectedItem.rap)}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Cost:</span>
+                  <p className="font-medium">${selectedItem.price.toFixed(2)}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Rate:</span>
+                  <p className="font-medium">{(selectedItem.price / ((selectedItem.rap || 1) / 1000)).toFixed(2)}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Projected:</span>
+                  <p className="font-medium">{selectedItem.projected ? "Yes" : "No"}</p>
+                </div>
               </div>
-              <div className="modal-body">
-                <p><strong>Limited ID:</strong> {selectedItem.limited_id}</p>
-                <p><strong>RAP:</strong> {selectedItem.rap.toLocaleString()}</p>
-                <p><strong>Value:</strong> {formatValue(selectedItem.rap)}</p>
-                <p><strong>Cost:</strong> ${selectedItem.price.toFixed(2)}</p>
-                <p><strong>Rate:</strong> {(selectedItem.price / ((selectedItem.rap || 1) / 1000)).toFixed(2)}</p>
-                <p><strong>Est. SGD Range:</strong> 
-                  {selectedItem.sgdMin && selectedItem.sgdMax
-                    ? ` S$${selectedItem.sgdMin.toLocaleString()} – S$${selectedItem.sgdMax.toLocaleString()}`
-                    : " —"}
-                </p>
-                <p><strong>Projected:</strong> {selectedItem.projected ? "Yes" : "No"}</p>
-              </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setSelectedItem(null)}>Close</button>
-              </div>
+              
+              {selectedItem.sgdMin && selectedItem.sgdMax && (
+                <div>
+                  <span className="text-gray-500 text-sm">Est. SGD Range:</span>
+                  <p className="font-medium">S${selectedItem.sgdMin.toLocaleString()} – S${selectedItem.sgdMax.toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end p-6 border-t border-gray-200">
+              <button
+                onClick={() => setSelectedItem(null)}
+                className={`px-4 py-2 rounded-md transition-colors ${
+                  darkMode 
+                    ? "bg-gray-600 hover:bg-gray-700 text-white" 
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+                }`}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

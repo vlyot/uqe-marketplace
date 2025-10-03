@@ -114,52 +114,44 @@ function App() {
     return () => clearInterval(timer);
   }, [reloadFlag]);
 
-  const themeClasses = darkMode ? "bg-dark text-light" : "";
-
   return (
-    <div className={`container-fluid min-vh-100 ${themeClasses}`}>
-      <div className="row">
-        <div className={`col-md-2 ${themeClasses} vh-100 p-3`}>
-          <h4>AduriteTracker (Web)</h4>
+    <div className={`min-h-screen ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}>
+      {/* Header */}
+      <header className={`${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border-b px-6 py-4`}>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">AduriteTracker</h1>
           <button
-            className={`btn btn-sm mb-3 ${darkMode ? "btn-light" : "btn-dark"}`}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              darkMode 
+                ? "bg-gray-700 hover:bg-gray-600 text-white" 
+                : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+            }`}
             onClick={() => setDarkMode(!darkMode)}
           >
-            Toggle {darkMode ? "Light" : "Dark"} Mode
+            {darkMode ? "Light Mode" : "Dark Mode"}
           </button>
-          <ul className="nav flex-column">
-            <li className="nav-item">
-              <a
-                className="nav-link text-light"
-                href="#"
-                onClick={(e) => e.preventDefault()}
-              >
-                Home
-              </a>
-            </li>
-          </ul>
         </div>
+      </header>
 
-        <div className="col-md-10 p-4">
-          <Home
-            items={items}
-            rateThreshold={rateThreshold}
-            setRateThreshold={setRateThreshold}
-            minRAP={minRAP}
-            setMinRAP={setMinRAP}
-            maxRAP={maxRAP}
-            setMaxRAP={setMaxRAP}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            error={error}
-            darkMode={darkMode}
-            reloadFlag={reloadFlag}
-            setReloadFlag={setReloadFlag}
-            runtime={runtime}
-          />
-        </div>
+      <div className="flex">
+        <Home
+          items={items}
+          rateThreshold={rateThreshold}
+          setRateThreshold={setRateThreshold}
+          minRAP={minRAP}
+          setMinRAP={setMinRAP}
+          maxRAP={maxRAP}
+          setMaxRAP={setMaxRAP}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          error={error}
+          darkMode={darkMode}
+          reloadFlag={reloadFlag}
+          setReloadFlag={setReloadFlag}
+          runtime={runtime}
+        />
       </div>
     </div>
   );
