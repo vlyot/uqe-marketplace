@@ -58,5 +58,25 @@ app.get('/roblox/thumbnails', async (req, res) => {
   }
 });
 
+// Proxy for Adurite market API
+app.get('/adurite/market/roblox', async (req, res) => {
+  const url = 'https://adurite.com/api/market/roblox';
+  try {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Proxy)' }
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('Adurite API error:', response.status, text);
+      return res.status(500).send(`Adurite proxy failed: ${response.status} - ${text}`);
+    }
+    const data = await response.text();
+    res.send(data);
+  } catch (err) {
+    console.error('Proxy fetch error:', err);
+    res.status(500).send('Error fetching data: ' + err.message);
+  }
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));

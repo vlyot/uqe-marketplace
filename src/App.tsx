@@ -17,7 +17,8 @@ interface AduriteItem {
 // Use proxy base from environment
 const PROXY_BASE = import.meta.env.VITE_ADURITE_BASE || "";
 const ROLIMONS_URL = `${PROXY_BASE}/rolimons/items/v1/itemdetails`;
-const ADURITE_URL = "https://adurite.com/api/market/roblox";
+// Use proxy for Adurite API if provided
+const ADURITE_URL = PROXY_BASE ? `${PROXY_BASE}/adurite/market/roblox` : "https://adurite.com/api/market/roblox";
 
 // Cache system
 interface CacheData {
