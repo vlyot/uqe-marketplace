@@ -321,7 +321,7 @@ const Home: React.FC<HomeProps> = ({
         
           {/* Free Tier Notice */}
           <div className="mx-6 mt-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-md">
-            <strong>Notice:</strong> If you do not see any items, please wait up to 2 minutes. This website is using a free hosting tier for the backend proxy, so it might be slow to load. Thank you for your patience!
+            <strong>Notice:</strong> If you do not see any items, please wait up to 5 minutes. This website is using a free hosting tier for the backend proxy, so it might be slow to load. Thank you for your patience! please feel free to do something else while waiting
           </div>
 
         {/* Products Grid */}
