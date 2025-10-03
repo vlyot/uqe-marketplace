@@ -460,7 +460,8 @@ const Home: React.FC<HomeProps> = ({
                     <h4 className={`text-sm font-medium ${darkMode ? "text-yellow-200" : "text-yellow-800"}`}>Price Estimate Disclaimer</h4>
                     <p className={`text-sm mt-1 ${darkMode ? "text-yellow-300" : "text-yellow-700"}`}>
                       The price range shown is a mere estimate. The real price and rate should be lower than the maximum prices stated. 
-                      The maximum prices are only shown as an extreme estimate, just in case.
+                      The maximum prices are only shown as an extreme estimate, just in case. Contact me for quotes and to confirm real price.
+                      Prices fluctuate frequently and may change at any time. 
                     </p>
                   </div>
                 </div>
