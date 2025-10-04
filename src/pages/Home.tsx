@@ -259,7 +259,7 @@ const Home: React.FC<HomeProps> = ({
           {/* Results Count */}
           <div className={`p-3 rounded-md ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}>
             <p className="text-sm">
-              <span className="font-medium">{filtered.length}</span> items found
+              <span className="font-medium">{filtered.length}</span> items uploaded
             </p>
           </div>
         </div>

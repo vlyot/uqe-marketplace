@@ -26,3 +26,4 @@ dist-ssr
 # local environment and notes
 .env
 todo
+dist/
