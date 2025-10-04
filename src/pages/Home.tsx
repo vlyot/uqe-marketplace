@@ -87,20 +87,28 @@ const Home: React.FC<HomeProps> = ({
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     const base = !q ? items : items.filter(i => i.limited_name.toLowerCase().includes(q));
-    
+
+    const minRAPNum = parseInt(minRAP) || 0;
+    // Debug log: show filter settings and RAPs
+    if (typeof window !== 'undefined') {
+      console.log('[DEBUG] Filter settings:', { minRAPNum, maxRAP, rateThreshold, sortBy, searchTerm });
+      console.log('[DEBUG] All RAPs:', base.map(e => e.rap));
+    }
+
     const byFilter = base.filter((entry) => {
-      const minRate = entry.rateMin || 0;
-      const minRAPNum = parseInt(minRAP) || 0;
-      
-      // Simple filtering - RAP range, rate threshold, and USD price
+      // Only filter by RAP range and USD price
       return (
         entry.rap >= minRAPNum &&
         entry.rap <= maxRAP &&
-        (minRate <= rateThreshold || minRate === 0) && // Allow items with 0 rate or within threshold
         entry.price > 0 // Only require USD price > 0
       );
     });
-    
+
+    // Debug log: show filtered RAPs
+    if (typeof window !== 'undefined') {
+      console.log('[DEBUG] Filtered RAPs:', byFilter.map(e => e.rap));
+    }
+
     return byFilter.sort((a, b) => {
       // Apply user-selected sorting
       if (sortBy === "rap") {
@@ -111,7 +119,7 @@ const Home: React.FC<HomeProps> = ({
         const rateB = (b.rateMin || 0);
         return rateA - rateB;
       }
-      
+
       return 0;
     });
   }, [items, minRAP, maxRAP, rateThreshold, sortBy, searchTerm]);
@@ -195,25 +203,7 @@ const Home: React.FC<HomeProps> = ({
             </div>
           </div>
 
-          {/* Rate Filter */}
-          <div className="mb-6">
-            <h3 className="text-sm font-medium mb-3 uppercase tracking-wide text-gray-500">Rate Threshold</h3>
-            <div className="space-y-2">
-              <label className="text-sm">Maximum Rate (≤ {rateThreshold})</label>
-              <input
-                type="number"
-                value={rateThreshold}
-                onChange={(e) => setRateThreshold(parseFloat(e.target.value))}
-                className={`w-full px-3 py-2 rounded-md border ${
-                  darkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                    : "bg-white border-gray-300 text-gray-900"
-                } focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-                step="0.1"
-                min="0"
-              />
-            </div>
-          </div>
+
 
           {/* RAP Range */}
           <div className="mb-6">
