@@ -40,8 +40,6 @@ type SortKey = "rate" | "rap" | null;
 
 export interface HomeProps {
   items: AduriteItem[];
-  rateThreshold: number;
-  setRateThreshold: React.Dispatch<React.SetStateAction<number>>;
   minRAP: string;
   setMinRAP: React.Dispatch<React.SetStateAction<string>>;
   maxRAP: number;
@@ -66,8 +64,6 @@ function formatValue(n: number): string {
 
 const Home: React.FC<HomeProps> = ({
   items,
-  rateThreshold,
-  setRateThreshold,
   minRAP,
   setMinRAP,
   maxRAP,
@@ -91,7 +87,7 @@ const Home: React.FC<HomeProps> = ({
     const minRAPNum = parseInt(minRAP) || 0;
     // Debug log: show filter settings and RAPs
     if (typeof window !== 'undefined') {
-      console.log('[DEBUG] Filter settings:', { minRAPNum, maxRAP, rateThreshold, sortBy, searchTerm });
+      console.log('[DEBUG] Filter settings:', { minRAPNum, maxRAP, sortBy, searchTerm });
       console.log('[DEBUG] All RAPs:', base.map(e => e.rap));
     }
 
@@ -122,7 +118,7 @@ const Home: React.FC<HomeProps> = ({
 
       return 0;
     });
-  }, [items, minRAP, maxRAP, rateThreshold, sortBy, searchTerm]);
+  }, [items, minRAP, maxRAP,sortBy, searchTerm]);
 
 
   // Long scrollable list, smaller cards
