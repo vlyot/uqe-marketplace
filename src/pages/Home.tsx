@@ -85,11 +85,11 @@ const Home: React.FC<HomeProps> = ({
     const base = !q ? items : items.filter(i => i.limited_name.toLowerCase().includes(q));
 
     const minRAPNum = parseInt(minRAP) || 0;
-    // Debug log: show filter settings and RAPs
-    if (typeof window !== 'undefined') {
-      console.log('[DEBUG] Filter settings:', { minRAPNum, maxRAP, sortBy, searchTerm });
-      console.log('[DEBUG] All RAPs:', base.map(e => e.rap));
-    }
+    // // Debug log: show filter settings and RAPs
+    // if (typeof window !== 'undefined') {
+    //   console.log('[DEBUG] Filter settings:', { minRAPNum, maxRAP, sortBy, searchTerm });
+    //   console.log('[DEBUG] All RAPs:', base.map(e => e.rap));
+    // }
 
     const byFilter = base.filter((entry) => {
       // Only filter by RAP range and USD price
@@ -100,10 +100,10 @@ const Home: React.FC<HomeProps> = ({
       );
     });
 
-    // Debug log: show filtered RAPs
-    if (typeof window !== 'undefined') {
-      console.log('[DEBUG] Filtered RAPs:', byFilter.map(e => e.rap));
-    }
+    // // Debug log: show filtered RAPs
+    // if (typeof window !== 'undefined') {
+    //   console.log('[DEBUG] Filtered RAPs:', byFilter.map(e => e.rap));
+    // }
 
     return byFilter.sort((a, b) => {
       // Apply user-selected sorting

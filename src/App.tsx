@@ -100,11 +100,11 @@ function App() {
       // Adurite shape: { items: { items: { "<key>": { limited_id, limited_name, rap, price, ... } } } }
       const rawItems: any[] = Object.values(aduriteRes?.items?.items ?? {});
 
-      // Debug: print high RAP items and their price string
-      if (typeof window !== 'undefined') {
-        const highRAP = rawItems.filter(e => Number(e.rap) > 200000);
-        console.log('[DEBUG] High RAP raw items:', highRAP.map(e => ({ name: e.limited_name, rap: e.rap, price: e.price })));
-      }
+      // // Debug: print high RAP items and their price string
+      // if (typeof window !== 'undefined') {
+      //   const highRAP = rawItems.filter(e => Number(e.rap) > 200000);
+      //   console.log('[DEBUG] High RAP raw items:', highRAP.map(e => ({ name: e.limited_name, rap: e.rap, price: e.price })));
+      // }
 
       const parsed = rawItems.map((entry: any) => {
         const roliArr = rolimonItems[String(entry.limited_id)];
